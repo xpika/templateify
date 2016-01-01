@@ -1,5 +1,6 @@
 {-# LANGUAGE NoMonomorphismRestriction #-} 
 
+
 import Data.Char
 import Text.HTML.TagSoup
 import Text.HTML.TagSoup.Tree
