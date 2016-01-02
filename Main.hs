@@ -1,5 +1,5 @@
 {-# LANGUAGE NoMonomorphismRestriction #-} 
-
+{-# LANGUAGE FlexibleInstances #-}
 
 import Data.Char
 import Text.HTML.TagSoup
@@ -10,29 +10,41 @@ import Data.Generics.Uniplate.Direct
 
 main = do
   -- simpleHttp "https://en.wikipedia.org/wiki/Main_Page"
-  handle <- openFile "Main_Page.html" ReadMode
+  handle <- openFile "testinput.html" ReadMode
   handleOut <- openFile "out.html" WriteMode
   hSetEncoding handle utf8_bom
   hSetEncoding handleOut utf8_bom
   contents <- hGetContents handle
-  let html = renderTags $ flattenTree $ transformTree f $  tagTree $ parseTags contents
+  let html = renderTags $  flattenTree $ (:[])$ transform f $ head $  tagTree $ parseTags contents
   hSetEncoding stdout utf8_bom
   hPutStr handleOut html
 
-flattenTreeEasy x  = flattenTree [x]
- 
 f subtree 
- | isContent subtree = [] 
- | otherwise = [subtree] 
+ | isContent subtree = (TagLeaf (TagText "blah"))
+ | otherwise = subtree 
 
-isContent =  
- (not . null) .
- filter (or . mapM isTagOpenName ["div","table","td","tr","thead","tbody"]) . 
- flattenTreeEasy
+isContent subtree =
+ containsContainers flatTree  
+ && not(isAllWhiteSpace flatTree)
+ where 
+  flatTree = flattenTreeEasy subtree
+
+containsContainers = 
+   (not . null) .
+   filter (or . mapM isTagOpenName ["div","table","td","tr","thead","tbody"])
+
+
+isAllWhiteSpace = const False
+ {-
+  and . 
+  map isTagText
+ -}
+
+flattenTreeEasy x = flattenTree [x] 
  
+instance Uniplate (TagTree a) where
+  uniplate (TagBranch x1 x2 x3) = plate (TagBranch x1 x2) ||* x3                                                                                                
+  uniplate x = plate x   
 
-{-
-instance Uniplate (TagTree str) where
-     uniplate (TagBranch str attr (x:[])) = (plate TagBranch str attr) |* x
-     uniplate (TagLeaf child) = plate (TagLeaf child)
--}
+
+
