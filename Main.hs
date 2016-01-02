@@ -5,6 +5,8 @@ import Data.Char
 import Text.HTML.TagSoup
 import Text.HTML.TagSoup.Tree
 import System.IO
+import Control.Monad.RWS
+import Data.Generics.Uniplate.Direct
 
 main = do
   -- simpleHttp "https://en.wikipedia.org/wiki/Main_Page"
@@ -28,3 +30,9 @@ isContent =
  filter (or . mapM isTagOpenName ["div","table","td","tr","thead","tbody"]) . 
  flattenTreeEasy
  
+
+{-
+instance Uniplate (TagTree str) where
+     uniplate (TagBranch str attr (x:[])) = (plate TagBranch str attr) |* x
+     uniplate (TagLeaf child) = plate (TagLeaf child)
+-}
