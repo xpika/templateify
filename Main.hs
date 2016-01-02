@@ -24,7 +24,7 @@ f subtree
  | otherwise = subtree 
 
 isContent subtree =
- containsContainers flatTree  
+ not (containsContainers flatTree)
  && not(isAllWhiteSpace flatTree)
  where 
   flatTree = flattenTreeEasy subtree
@@ -34,17 +34,18 @@ containsContainers =
    filter (or . mapM isTagOpenName ["div","table","td","tr","thead","tbody"])
 
 
-isAllWhiteSpace = const False
- {-
+isAllWhiteSpace = 
   and . 
-  map isTagText
- -}
+  map (or . sequence [isTagOpenName "br" , allSpace . innerText . (:[]) ])
+
+allSpace = all isSpace
 
 flattenTreeEasy x = flattenTree [x] 
  
 instance Uniplate (TagTree a) where
   uniplate (TagBranch x1 x2 x3) = plate (TagBranch x1 x2) ||* x3                                                                                                
   uniplate x = plate x   
+
 
 
 
