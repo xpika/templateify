@@ -12,21 +12,25 @@ import Debug.Trace
 main = do
   handle <- openFile "testinput.html" ReadMode
   handleOut <- openFile "out.html" WriteMode
-  handlecontent <- openFile "content_.html" WriteMode
   hSetEncoding handle utf8_bom
   hSetEncoding handleOut utf8_bom
   contents <- hGetContents handle
-  let (stuff,more) = runState (f $ head $ tagTree $ parseTags contents) (  0  ) 
+  let (stuff,(more,more2)) = runState (f $ head $ tagTree $ parseTags contents) (  0 ,[] ) 
   let html = renderTags $ flattenTree $ (:[]) $ stuff
+  forM more2 $ \(serial,cont )  -> do
+    handleContent <- openFile ("content_"++(show serial)++".html") WriteMode
+    hSetEncoding handleContent utf8_bom
+    hPutStr handleContent (renderTags cont)
+    hClose handleContent
+  hSetEncoding handle utf8_bom
   hSetEncoding stdout utf8_bom
   hPutStr handleOut html
   hClose handleOut
-  hClose handlecontent
 
 f t@(TagBranch name atts ts)  
  | (not (any containsContainers fts)) && (not (all allWhiteSpace fts))
-    = modify (+1) >> get >>= \v -> return (TagBranch name atts [(TagLeaf (TagText ("blah"++show v)))])
- | otherwise =  mapM (descendM f) ts >>= \res -> return (TagBranch name atts (map id res))
+    = modify (\(x,y)->(x+1,(x+1,concat fts):y)) >> get >>= \(counter,areas) -> return (TagBranch name atts [(TagLeaf (TagText ("{{area"++show counter++"}")))])
+ | otherwise =  mapM (descendM f) ts >>= \res -> return (TagBranch name atts res)
  where 
   fts = map flattenTreeEasy ts
 f x = return x
