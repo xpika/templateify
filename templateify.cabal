@@ -53,5 +53,5 @@ executable templateify
   -- other-modules:       
   
   -- Other library packages from which modules are imported.
-  build-depends:       base ==4.6.* , tagsoup < 1000
+  build-depends:       base ==4.6.* , tagsoup < 1000 , uniplate <10000 , mtl <10000
   

@@ -5,28 +5,31 @@ import Data.Char
 import Text.HTML.TagSoup
 import Text.HTML.TagSoup.Tree
 import System.IO
-import Control.Monad.RWS
+import Control.Monad.State
 import Data.Generics.Uniplate.Direct
 import Debug.Trace
 
 main = do
   handle <- openFile "testinput.html" ReadMode
   handleOut <- openFile "out.html" WriteMode
+  handlecontent <- openFile "content_.html" WriteMode
   hSetEncoding handle utf8_bom
   hSetEncoding handleOut utf8_bom
   contents <- hGetContents handle
-  let html = renderTags $ flattenTree $ (:[]) $ transform f $ head $ tagTree $ parseTags contents
+  let (stuff,more) = runState (f $ head $ tagTree $ parseTags contents) (  0  ) 
+  let html = renderTags $ flattenTree $ (:[]) $ stuff
   hSetEncoding stdout utf8_bom
   hPutStr handleOut html
   hClose handleOut
+  hClose handlecontent
 
 f t@(TagBranch name atts ts)  
  | (not (any containsContainers fts)) && (not (all allWhiteSpace fts))
-    = (TagBranch name atts [(TagLeaf (TagText "blah"))])
- | otherwise = t
+    = modify (+1) >> get >>= \v -> return (TagBranch name atts [(TagLeaf (TagText ("blah"++show v)))])
+ | otherwise =  mapM (descendM f) ts >>= \res -> return (TagBranch name atts (map id res))
  where 
   fts = map flattenTreeEasy ts
-f x = x
+f x = return x
 
 containsContainers = 
  any (or . mapM isTagOpenName ["div","table","td","tr","thead","tbody"])
