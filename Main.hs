@@ -9,8 +9,10 @@ import Control.Monad.State
 import Data.Generics.Uniplate.Direct
 import Debug.Trace
 
-main = do
-  handle <- openFile "testinput.html" ReadMode
+main = domain "testinput.html" 
+
+domain str = do  
+  handle <- openFile str ReadMode
   handleOut <- openFile "out.html" WriteMode
   hSetEncoding handle utf8_bom
   hSetEncoding handleOut utf8_bom
