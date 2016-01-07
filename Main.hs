@@ -8,6 +8,7 @@ import System.IO
 import Control.Monad.State
 import Data.Generics.Uniplate.Direct
 import Debug.Trace
+import Control.Applicative
 
 main = domain "testinput.html" 
 
@@ -19,7 +20,8 @@ domain str = do
   contents <- hGetContents handle
   let (stuff,(more,more2)) = runState (f $ head $ tagTree $ parseTags contents) (  0 ,[] ) 
   let html = renderTags $ flattenTree $ (:[]) $ stuff
-  forM more2 $ \(serial,cont )  -> do
+  forM more2 $ \(cont)  -> do
+    let serial = 0
     handleContent <- openFile ("content_"++(show serial)++".html") WriteMode
     hSetEncoding handleContent utf8_bom
     hPutStr handleContent (renderTags cont)
@@ -29,9 +31,15 @@ domain str = do
   hPutStr handleOut html
   hClose handleOut
 
+templatify contents = ( renderTags $ flattenTree $ pure r,  s)
+  where (r,s) = templatify' contents
+
+templatify' contents = (r, snd s)
+  where (r,s) = runState (f $ head $ tagTree$ parseTags contents) (  0 ,[] )
+
 f t@(TagBranch name atts ts)  
  | (not (any containsContainers fts)) && (not (all allWhiteSpace fts))
-    = modify (\(x,y)->(x+1,(x+1,concat fts):y)) >> get >>= \(counter,areas) -> return (TagBranch name atts [(TagLeaf (TagText ("{{area"++show counter++"}")))])
+    = modify (\(x,y)->(x+1,(concat fts):y)) >> get >>= \(counter,areas) -> return (TagBranch name atts [(TagLeaf (TagText ("{{area"++show counter++"}")))])
  | otherwise =  mapM (descendM f) ts >>= \res -> return (TagBranch name atts res)
  where 
   fts = map flattenTreeEasy ts
