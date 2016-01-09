@@ -9,7 +9,9 @@ import Control.Monad.State
 import Data.Generics.Uniplate.Direct
 import Debug.Trace
 import Control.Applicative
+import Control.Arrow
 
+{-
 main = domain "testinput.html" 
 
 domain str = do  
@@ -37,13 +39,33 @@ templatify contents = ( renderTags $ flattenTree $ pure r,  s)
 templatify' contents = (r, snd s)
   where (r,s) = runState (f $ head $ tagTree$ parseTags contents) (  0 ,[] )
 
+-}
+{-
+templateify_ contents = ( renderTags $ flattenTree $ pure r,  s)
+  where (r,s) = templateify_' contents
+-}
+
+ {-
+
+templateify_'  contents = (map fst z,  map ( snd. snd) z)
+  where z = templateify_'' contents 
+
+templateify_'' contents = map templateify_''' (tagTree $ parseTags contents)
+
+templateify_''' contents  = runState (f contents) ( 0 ,[] )
+
 f t@(TagBranch name atts ts)  
- | (not (any containsContainers fts)) && (not (all allWhiteSpace fts))
-    = modify (\(x,y)->(x+1,(concat fts):y)) >> get >>= \(counter,areas) -> return (TagBranch name atts [(TagLeaf (TagText ("{{area"++show counter++"}")))])
+    = mapM (modify (\(x,y)->(x+1,ts++y)) >> get >>= \(counter,areas) -> return (TagBranch name atts [(TagLeaf (TagText ("{{area"++show counter++"}")))])
  | otherwise =  mapM (descendM f) ts >>= \res -> return (TagBranch name atts res)
  where 
+  (gs,bs) = partition p ts
   fts = map flattenTreeEasy ts
+  p x = (not (any containsContainers x)) && (not (all allWhiteSpace x))
 f x = return x
+ -}
+
+
+listToEither p xs = map (\x -> case p x of {True -> Left x ; _ -> Right x} ) xs
 
 containsContainers = 
  any (or . mapM isTagOpenName ["div","table","td","tr","thead","tbody"])
