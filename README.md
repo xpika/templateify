@@ -1,5 +1,6 @@
 # templateify
 
-Extract all subtrees consisting of no divs or table tags.  
-Replace them with variables.  
-Export components to files in folders.    
+```
+*Main> templateify "<div> hello <div> world </div> </div>"                                                                                                                
+(["<div>{{area1}<div>{{area2}</div> </div>"],[" world "," hello "])   
+```
