@@ -14,9 +14,6 @@ import Data.Function
 import Data.List
 
 
-
-shade p = map (\xs -> if not . null $ filter p xs then Left xs else Right xs)  . groupBy (on (==) p) 
-
 {-
 
 main = domain "testinput.html" 
@@ -39,43 +36,35 @@ domain str = do
   hSetEncoding stdout utf8_bom
   hPutStr handleOut html
   hClose handleOut
-
-templatify contents = ( renderTags $ flattenTree $ pure r,  s)
-  where (r,s) = templatify' contents
-
-templatify' contents = (r, snd s)
-  where (r,s) = runState (f $ head $ tagTree$ parseTags contents) (  0 ,[] )
-
 -}
 
-{-
-templateify_ contents = ( renderTags $ flattenTree $ pure r,  s)
-  where (r,s) = templateify_' contents
--}
+eg = templateify egStr
+egStr = "<div>hello<div>world</div></div>"
 
- {-
+templateify str = join (***) (map (renderTags . flattenTree)) (templateify' str)
 
-templateify_'  contents = (map fst z,  map ( snd. snd) z)
-  where z = templateify_'' contents 
+templateify' str = (a,c) 
+  where (a,(_,c)) = runState (f $  templateify'' str ) (0,[])
 
-templateify_'' contents = map templateify_''' (tagTree $ parseTags contents)
+templateify'' str = tagTree $ parseTags str
 
-templateify_''' contents  = runState (f contents) ( 0 ,[] )
--}
-
-
-{-
-f ts = mapM (f' ||| mapM (descendM f) ) (shade p ts) >>= return . concat
+f ts = mapM (  mapM innerDo ||| f' )  (shade p ts)
  where
   f' subtrees = do 
-    mapM (\subtree -> modify (\(x,y)->(x+1,subtree:y))) subtrees 
-    (counter,areas) <- get 
-    return [TagLeaf (TagText ("{{area"++show counter++"}"))]
-  p x = (not (containsContainers x')) && (not (allWhiteSpace x'))
-    where x' = flattenTreeEasy x
-f x = return x
--}
+   modify (\(x,y)->(x+1,subtrees:y))
+   (counter,areas) <- get 
+   return [TagLeaf (TagText ("{{area"++show counter++"}"))]
+  innerDo (TagBranch str atts children) = do 
+    children' <- f children
+    return (TagBranch str atts (concat children'))
+  innerDo x = return x
 
+p x = not (containsContainers x') || (allWhiteSpace x')
+    where x' = flattenTreeEasy x
+
+shade p = map (\xs -> if not . null $ filter p xs then Right xs else Left xs)  . groupBy (on (==) p) 
+
+chil (TagBranch str atts children)  = children
 
 containsContainers = 
  any (or . mapM isTagOpenName ["div","table","td","tr","thead","tbody"])
