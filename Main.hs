@@ -59,7 +59,7 @@ f ts = mapM (  mapM innerDo ||| f' )  (shade p ts)
     return (TagBranch str atts (concat children'))
   innerDo x = return x
 
-p x = not (containsContainers x') || (allWhiteSpace x')
+p x = not ((containsContainers x') || (allWhiteSpace x'))
     where x' = flattenTreeEasy x
 
 shade p = map (\xs -> if not . null $ filter p xs then Right xs else Left xs)  . groupBy (on (==) p) 
@@ -70,8 +70,7 @@ containsContainers =
  any (or . mapM isTagOpenName ["div","table","td","tr","thead","tbody"])
 
 allWhiteSpace flatTree = 
-    (all (or . sequence [isTagOpenName "br",isTagText]) flatTree)
- && (all isSpace . innerText $ flatTree)
+ (all isSpace . innerText $ flatTree)
 
 flattenTreeEasy x = flattenTree [x] 
  
