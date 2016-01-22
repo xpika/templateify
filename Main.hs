@@ -13,42 +13,15 @@ import Control.Arrow
 import Data.Function
 import Data.List
 
-
-{-
-
-main = domain "testinput.html" 
-
-domain str = do  
-  handle <- openFile str ReadMode
-  handleOut <- openFile "out.html" WriteMode
-  hSetEncoding handle utf8_bom
-  hSetEncoding handleOut utf8_bom
-  contents <- hGetContents handle
-  let (stuff,(more,more2)) = runState (f $ head $ tagTree $ parseTags contents) (  0 ,[] ) 
-  let html = renderTags $ flattenTree $ (:[]) $ stuff
-  forM more2 $ \(cont)  -> do
-    let serial = 0
-    handleContent <- openFile ("content_"++(show serial)++".html") WriteMode
-    hSetEncoding handleContent utf8_bom
-    hPutStr handleContent (renderTags cont)
-    hClose handleContent
-  hSetEncoding handle utf8_bom
-  hSetEncoding stdout utf8_bom
-  hPutStr handleOut html
-  hClose handleOut
--}
-
 eg = templateify egStr
 egStr = "<div>hello<div>world</div></div>"
 
-templateify str = join (***) (map (renderTags . flattenTree)) (templateify' str)
+templateify str = (renderTags .flattenTree) *** (map (renderTags . flattenTree)) $ templateify' str
+templateify' str = (concat  ***  snd) $ runState (f $ stringToTagTree str) (0,[])
 
-templateify' str = (a,c) 
-  where (a,(_,c)) = runState (f $  templateify'' str ) (0,[])
+stringToTagTree str = tagTree $ parseTags str
 
-templateify'' str = tagTree $ parseTags str
-
-f ts = mapM (  mapM innerDo ||| f' )  (shade p ts)
+f ts = mapM (mapM innerDo ||| f') (shade p ts)
  where
   f' subtrees = do 
    modify (\(x,y)->(x+1,subtrees:y))
@@ -63,8 +36,6 @@ p x = not ((containsContainers x') || (allWhiteSpace x'))
     where x' = flattenTreeEasy x
 
 shade p = map (\xs -> if not . null $ filter p xs then Right xs else Left xs)  . groupBy (on (==) p) 
-
-chil (TagBranch str atts children)  = children
 
 containsContainers = 
  any (or . mapM isTagOpenName ["div","table","td","tr","thead","tbody"])
