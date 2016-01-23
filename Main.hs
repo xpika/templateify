@@ -15,7 +15,7 @@ main = domain "testinput.html"
 
 domain str = do  
  handle <- openFile str ReadMode
- handleOut <- openFile "out.html" WriteMode
+ handleOut <- openFile "template.html" WriteMode
  hSetEncoding handle utf8_bom
  hSetEncoding handleOut utf8_bom
  sourceHtml <- hGetContents handle
@@ -51,7 +51,11 @@ f ts = mapM ( f' |||  mapM innerDo) (shade containsContainers ts)
     return (TagBranch str atts (concat children'))
   innerDo x = return x
 
-shade p = map (\xs -> if not . null $ filter p xs then Right xs else Left xs) . groupBy (on (==) p)  
+shade p as = map (\xs -> if any isRight xs then Right (map fromEither xs) else Left (map fromEither xs)) $ groupBy (\x y -> isRight x == isRight y) (map (color p) as)
+  where isRight (Right a) =True
+        isRight _ = False
+        fromEither (Right a) = a
+        fromEither (Left a) = a
 color p a = if p a then Right a else Left a 
 
 containsContainers x = (containsContainers' x')
