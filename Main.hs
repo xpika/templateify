@@ -45,7 +45,7 @@ f ts = mapM ( f' |||  mapM innerDo) (shade containsContainers ts)
   f'' subtrees = do 
    modify (\(x,y)->(x+1,subtrees:y))
    (counter,areas) <- get 
-   return [TagLeaf (TagText ("{{area"++show counter++"}"))]
+   return [TagLeaf (TagText ("{area"++show counter++"}"))]
   innerDo (TagBranch str atts children) = do 
     children' <- f children
     return (TagBranch str atts (concat children'))
