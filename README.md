@@ -3,7 +3,6 @@
 Replace all subtree sequences without containers with variables. 
 Store a map of those variables to their respective content.
 
-type should be.
 templateify :: String -> (String,[String])
 
 ```
